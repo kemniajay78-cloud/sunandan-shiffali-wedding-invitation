@@ -3,9 +3,8 @@
   const envelope = document.querySelector("#envelope");
   const openPrompt = document.querySelector("#open-prompt");
   const musicToggle = document.querySelector(".music-toggle");
+  const music = document.querySelector("#invitation-music");
   let opened = false;
-  let audioContext;
-  let musicNodes = [];
 
   function openInvitation() {
     if (opened) return;
@@ -26,47 +25,26 @@
 
   function setMusicButton(isPlaying) {
     musicToggle.setAttribute("aria-pressed", String(isPlaying));
-    musicToggle.setAttribute("aria-label", isPlaying ? "Turn ambient music off" : "Turn ambient music on");
+    musicToggle.setAttribute("aria-label", isPlaying ? "Turn music off" : "Turn music on");
     musicToggle.querySelector(".music-label").textContent = isPlaying ? "Music on" : "Music off";
   }
 
   function startMusic() {
-    if (audioContext) {
-      if (audioContext.state === "suspended") audioContext.resume();
+    music.play().then(() => {
       setMusicButton(true);
-      return;
-    }
-
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    audioContext = new AudioContextClass();
-    const master = audioContext.createGain();
-    master.gain.value = 0.035;
-    master.connect(audioContext.destination);
-
-    [130.81, 196, 261.63].forEach((frequency, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      oscillator.type = index === 1 ? "sine" : "triangle";
-      oscillator.frequency.value = frequency;
-      gain.gain.value = index === 0 ? 0.22 : 0.1;
-      oscillator.connect(gain);
-      gain.connect(master);
-      oscillator.start();
-      musicNodes.push(oscillator, gain);
+    }).catch((error) => {
+      setMusicButton(false);
+      console.error("Unable to play the wedding invitation music.", error);
     });
-    musicNodes.push(master);
-    setMusicButton(true);
   }
 
   function stopMusic() {
-    if (!audioContext) return;
-    audioContext.suspend();
+    music.pause();
     setMusicButton(false);
   }
 
   musicToggle.addEventListener("click", () => {
-    if (!audioContext || audioContext.state === "suspended") startMusic();
+    if (music.paused) startMusic();
     else stopMusic();
   });
 
